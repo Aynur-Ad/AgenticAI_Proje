@@ -12,9 +12,15 @@ from core.pipeline import StoryWorkshopPipeline
 from agents.safety import SafetyGuard
 
 
-def run_workshop_with_safety(user_input: dict):
+def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict):
     """
-    Konsoldaki güvenlik mantığını GUI akışına uygun hale getirir.
+    GUI üzerinden güvenlik akışını yürütür.
+    - SafetyGuard ile kontrol eder
+    - Gerekirse yeni tema ister
+    - Gerekirse yaş sorar
+    - 18+ ve hassas tema ise constraints ekler
+    DÖNÜŞ:
+        (proceed: bool, safe_user_input: dict | None)
     """
     guard = SafetyGuard()
     forced_safe_mode = False
@@ -23,8 +29,10 @@ def run_workshop_with_safety(user_input: dict):
         safety_result = guard.check_and_input(user_input)
 
         if safety_result.get("safe", True):
+            # güvenli → döngüden çık
             break
 
+        # güvenli değil
         msg = safety_result.get("message", "Güvenlik filtresi devreye girdi.")
         sug = safety_result.get("suggestion", "Lütfen daha güvenli bir tema düşün.")
         full_msg = f"{msg}\n\nÖneri: {sug}"
@@ -35,28 +43,48 @@ def run_workshop_with_safety(user_input: dict):
         )
 
         if retry:
-            new_theme = simpledialog.askstring("Yeni Tema", "Yeni, daha güvenli bir tema yazın:")
+            # yeni tema
+            new_theme = simpledialog.askstring(
+                "Yeni Tema",
+                "Yeni, daha güvenli bir tema yazın:"
+            )
             if not new_theme:
-                messagebox.showinfo("İptal", "Yeni tema girilmedi, işlem iptal edildi.")
-                return None
+                messagebox.showinfo(
+                    "İptal",
+                    "Yeni tema girilmedi, işlem iptal edildi."
+                )
+                return False, None
             user_input["theme"] = new_theme
-            continue
+            continue  # döngü başa, yeni temayı kontrol et
         else:
-            age = simpledialog.askinteger("Yaş Doğrulama", "Bu temayla devam etmek için yaşınızı girin:")
+            # yaş sor
+            age = simpledialog.askinteger(
+                "Yaş Doğrulama",
+                "Bu temayla devam etmek için yaşınızı girin:"
+            )
             if age is None:
-                messagebox.showinfo("İptal", "Yaş bilgisi verilmedi, işlem iptal edildi.")
-                return None
+                messagebox.showinfo(
+                    "İptal",
+                    "Yaş bilgisi verilmedi, işlem iptal edildi."
+                )
+                return False, None
+
             if age < 18:
-                messagebox.showwarning("Yaş Sınırı", "18 yaş altı kullanıcılar için bu tema işlenemez.")
-                return None
+                messagebox.showwarning(
+                    "Yaş Sınırı",
+                    "18 yaş altı kullanıcılar için bu tema işlenemez."
+                )
+                return False, None
 
             messagebox.showinfo(
                 "Devam Ediliyor",
-                "18 yaş üstü onaylandı. Tema korunacak ancak güvenli/etik çerçevede işlenecek."
+                "18 yaş üstü onaylandı. Tema korunacak ancak "
+                "güvenli/etik çerçevede işlenecek."
             )
             forced_safe_mode = True
-            break
+            break  # hassas tema + 18+, döngüden çıkıyoruz
 
+    # hassas temayla 18+ devam: ek constraint
     if forced_safe_mode:
         constraints = user_input.get("constraints") or []
         constraints.append(
@@ -65,6 +93,14 @@ def run_workshop_with_safety(user_input: dict):
         )
         user_input["constraints"] = constraints
 
+    return True, user_input
+
+
+def run_workshop_no_safety(user_input: dict) -> dict:
+    """
+    Sadece LLM + pipeline kısmı.
+    Güvenlik daha önce apply_safety_flow_with_gui ile yapılmış olmalı.
+    """
     llm = get_llm()
     writer = WriterAgent(llm)
     critic = CriticAgent(llm)
@@ -84,7 +120,7 @@ def _pretty_json_if_possible(text: str) -> str:
 def _copy_to_clipboard(root: tk.Tk, text: str):
     root.clipboard_clear()
     root.clipboard_append(text)
-    root.update()  # bazı sistemlerde gerekli
+    root.update()
 
 
 def create_gui():
@@ -93,7 +129,7 @@ def create_gui():
     root.geometry("980x720")
     root.minsize(900, 650)
 
-    # ---- ttk theme (varsayılanlar arasında daha modern olanı seçmeye çalışalım)
+    # ---- ttk theme
     style = ttk.Style()
     try:
         if "clam" in style.theme_names():
@@ -120,7 +156,6 @@ def create_gui():
     main = ttk.Frame(root, padding=12)
     main.pack(fill="both", expand=True)
 
-    # Sol: Form, Sağ: Output
     main.columnconfigure(0, weight=1, uniform="cols")
     main.columnconfigure(1, weight=2, uniform="cols")
     main.rowconfigure(0, weight=1)
@@ -152,7 +187,12 @@ def create_gui():
 
     ttk.Label(form_card, text="Uzunluk").grid(row=4, column=0, sticky="w")
     length_var = tk.StringVar(value="short")
-    length_menu = ttk.Combobox(form_card, textvariable=length_var, values=["short", "medium", "long"], state="readonly")
+    length_menu = ttk.Combobox(
+        form_card,
+        textvariable=length_var,
+        values=["short", "medium", "long"],
+        state="readonly",
+    )
     length_menu.grid(row=4, column=1, sticky="w", pady=4)
 
     ttk.Label(form_card, text="Stil").grid(row=5, column=0, sticky="w")
@@ -160,7 +200,7 @@ def create_gui():
     entry_style = ttk.Entry(form_card, textvariable=style_var)
     entry_style.grid(row=5, column=1, sticky="ew", pady=4)
 
-    # ---- progress + status
+    # ---- status & progress
     status_var = tk.StringVar(value="Hazır")
     status_line = ttk.Label(form_card, textvariable=status_var)
     status_line.grid(row=7, column=0, columnspan=2, sticky="w", pady=(10, 0))
@@ -168,7 +208,7 @@ def create_gui():
     progress = ttk.Progressbar(form_card, mode="indeterminate")
     progress.grid(row=8, column=0, columnspan=2, sticky="ew", pady=(6, 0))
 
-    # ---- outputs: notebook (tabs)
+    # ---- outputs: notebook
     out_card.columnconfigure(0, weight=1)
     out_card.rowconfigure(0, weight=1)
 
@@ -183,33 +223,38 @@ def create_gui():
     notebook.add(tab_critic, text="Eleştiri")
     notebook.add(tab_final, text="Final")
 
-    # her tab grid ayar
     for tab in (tab_draft, tab_critic, tab_final):
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(1, weight=1)
 
-    # Taslak tab
     ttk.Label(tab_draft, text="İlk taslak metin").grid(row=0, column=0, sticky="w")
     text_draft = scrolledtext.ScrolledText(tab_draft, wrap="word")
     text_draft.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
-    btn_copy_draft = ttk.Button(tab_draft, text="Kopyala", command=lambda: _copy_to_clipboard(root, text_draft.get("1.0", "end-1c")))
-    btn_copy_draft.grid(row=2, column=0, sticky="e", pady=(8, 0))
+    ttk.Button(
+        tab_draft,
+        text="Kopyala",
+        command=lambda: _copy_to_clipboard(root, text_draft.get("1.0", "end-1c")),
+    ).grid(row=2, column=0, sticky="e", pady=(8, 0))
 
-    # Eleştiri tab
-    ttk.Label(tab_critic, text="Eleştirmen geri bildirimi (varsa JSON düzenlenir)").grid(row=0, column=0, sticky="w")
+    ttk.Label(tab_critic, text="Eleştirmen geri bildirimi (JSON olarak)").grid(row=0, column=0, sticky="w")
     text_feedback = scrolledtext.ScrolledText(tab_critic, wrap="word")
     text_feedback.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
-    btn_copy_feedback = ttk.Button(tab_critic, text="Kopyala", command=lambda: _copy_to_clipboard(root, text_feedback.get("1.0", "end-1c")))
-    btn_copy_feedback.grid(row=2, column=0, sticky="e", pady=(8, 0))
+    ttk.Button(
+        tab_critic,
+        text="Kopyala",
+        command=lambda: _copy_to_clipboard(root, text_feedback.get("1.0", "end-1c")),
+    ).grid(row=2, column=0, sticky="e", pady=(8, 0))
 
-    # Final tab
     ttk.Label(tab_final, text="Geliştirilmiş final hikaye").grid(row=0, column=0, sticky="w")
     text_final = scrolledtext.ScrolledText(tab_final, wrap="word")
     text_final.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
-    btn_copy_final = ttk.Button(tab_final, text="Kopyala", command=lambda: _copy_to_clipboard(root, text_final.get("1.0", "end-1c")))
-    btn_copy_final.grid(row=2, column=0, sticky="e", pady=(8, 0))
+    ttk.Button(
+        tab_final,
+        text="Kopyala",
+        command=lambda: _copy_to_clipboard(root, text_final.get("1.0", "end-1c")),
+    ).grid(row=2, column=0, sticky="e", pady=(8, 0))
 
-    # ---- alt butonlar
+    # ---- butonlar
     btn_row = ttk.Frame(form_card)
     btn_row.grid(row=6, column=0, columnspan=2, sticky="ew", pady=(12, 0))
     btn_row.columnconfigure(0, weight=1)
@@ -225,7 +270,7 @@ def create_gui():
             run_button.config(state="disabled")
             clear_button.config(state="disabled")
             progress.start(12)
-            status_var.set("Çalışıyor... (LLM çağrıları yapılırken biraz sürebilir)")
+            status_var.set("Çalışıyor... (LLM çağrıları biraz sürebilir)")
         else:
             progress.stop()
             run_button.config(state="normal")
@@ -241,7 +286,10 @@ def create_gui():
         story_style = entry_style.get().strip() or "sade ve akıcı Türkçe"
 
         if not title or not genre or not theme:
-            messagebox.showwarning("Eksik Bilgi", "Lütfen en az başlık, tür ve tema alanlarını doldurun.")
+            messagebox.showwarning(
+                "Eksik Bilgi",
+                "Lütfen en az başlık, tür ve tema alanlarını doldurun."
+            )
             return
 
         chars_list = [c.strip() for c in chars.split(",") if c.strip()]
@@ -252,15 +300,24 @@ def create_gui():
             "characters": chars_list,
             "theme": theme,
             "length": length,
-            "style": story_style
+            "style": story_style,
         }
 
         clear_outputs()
+
+        # 1) GÜVENLİK akışını ANA THREAD'de çalıştır
+        proceed, safe_input = apply_safety_flow_with_gui(root, user_input)
+        if not proceed or safe_input is None:
+            # kullanıcı iptal etti veya yaş sınırı vs.
+            return
+
+        # 2) LLM + pipeline'ı BACKGROUND THREAD'de çalıştır
         set_running(True)
+        safe_input = dict(safe_input)  # thread'e kopya verelim
 
         def worker():
             try:
-                result = run_workshop_with_safety(user_input)
+                result = run_workshop_no_safety(safe_input)
                 if result is None:
                     root.after(0, lambda: set_running(False))
                     return
@@ -296,7 +353,7 @@ def create_gui():
     clear_button = ttk.Button(btn_row, text="Temizle", command=clear_outputs)
     clear_button.grid(row=0, column=1, sticky="ew", padx=(6, 0))
 
-    # küçük UX: varsayılan örnek doldurmak istersen
+    # örnek default değerler
     entry_title.insert(0, "Kırık Pencere")
     entry_genre.insert(0, "dram")
     entry_chars.insert(0, "Elif, Murat")
