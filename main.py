@@ -4,6 +4,8 @@ from agents.critic_agent import CriticAgent
 from agents.editor_agent import EditorAgent
 from core.pipeline import StoryWorkshopPipeline
 from agents.safety import SafetyGuard
+from app.gui_interface import create_gui
+
 
 def main():
     # 1. Modelleri ve Pipeline'ı Hazırla
@@ -61,4 +63,5 @@ def main():
     print(result.get("final_story", "Final metni oluşturulamadı."))
 
 if __name__ == "__main__":
-    main()
+    
+    create_gui()
