@@ -211,7 +211,7 @@ def create_gui():
     ttk.Label(header, text="Yapay Hikaye Atölyesi", style="Header.TLabel").pack(anchor="w")
     ttk.Label(
         header,
-        text="Başlık/Tür/Tema gir → Yazım Hatası Kontrolü → Güvenlik Kontrolü → Taslak + Eleştiri + Final",
+        text="Başlık/Tür/Tema gir → Güvenlik kontrolü → Taslak + Eleştiri + Final",
         style="Sub.TLabel"
     ).pack(anchor="w", pady=(4, 0))
 
