@@ -1,16 +1,8 @@
-class StoryWorkshopPipeline:
+from __future__ import annotations
 
-  
+class StoryWorkshopPipeline:
     """
     Yapay Hikaye Atolyesi Pipeline'i
-
-    - Writer: ilk taslak uretir
-    - Critic: hikayeyi degerlendirir
-    - Editor: geri bildirimleri uygulayarak hikayeyi gelistirir
-
-    Amac:
-    Yeni yazarlara adim adim rehberlik eden
-    kontrollu bir atölye sureci sunmak
     """
 
     def __init__(self, writer, critic, editor):
@@ -21,25 +13,49 @@ class StoryWorkshopPipeline:
     def run(self, user_input: dict) -> dict:
         """
         Atolye akisini baslatir.
-
-        Girdi:
-        - user_input: WriterAgent icin girilen bilgiler
-
-        Cikti:
-        - Atolye surecinin tum adimlarini iceren dict
+        GÜNCELLEME: Başlık, Baş Harfleri Büyük (Title Case) formatında eklenir.
         """
 
-        # 1️⃣ Hikaye taslagi
-        draft_story = self.writer.generate_draft(user_input)
+        # Başlığı al ve düzgün formatla (Örn: "kırık pencere" -> "Kırık Pencere")
+        raw_title = user_input.get("title", "Başlıksız")
+        display_title = raw_title.strip().title()
 
-        # 2️⃣ Eleştirmen geri bildirimi
-        critic_feedback = self.critic.run(draft_story)
+        # 1️⃣ Writer: Hikaye taslagi
+        writer_output = self.writer.generate_draft(user_input)
+        
+        # Eğer soru sorma durumu varsa (Belirsizlik):
+        if isinstance(writer_output, dict) and writer_output.get("type") == "clarification":
+            # Soruları olduğu gibi döndür
+            questions = "\n".join(f"- {q}" for q in writer_output["content"])
+            return {
+                "status": "needs_clarification",
+                "draft_story": questions,
+                "critic_feedback": "",
+                "final_story": ""
+            }
+        
+        # İçeriği al
+        draft_text = ""
+        if isinstance(writer_output, dict):
+            draft_text = writer_output.get("content", "")
+        else:
+            draft_text = writer_output
 
-        # 3️⃣ Editör düzenlemesi
-        final_story = self.editor.revise(draft_story, critic_feedback)
+        # --- Başlığı Taslağın Başına Ekle ---
+        full_draft_story = f"📄 {display_title}\n{'-'*len(display_title)}\n\n{draft_text}"
+
+        # 2️⃣ Eleştirmen: (Orijinal metni değerlendirsin)
+        critic_feedback = self.critic.run(draft_text)
+
+        # 3️⃣ Editör: Düzenleme
+        final_text = self.editor.revise(draft_text, critic_feedback)
+
+        # --- Başlığı Finalin Başına Ekle ---
+        full_final_story = f"📖 {display_title}\n{'-'*len(display_title)}\n\n{final_text}"
 
         return {
-            "draft_story": draft_story,
+            "status": "complete",
+            "draft_story": full_draft_story,
             "critic_feedback": critic_feedback,
-            "final_story": final_story
+            "final_story": full_final_story
         }

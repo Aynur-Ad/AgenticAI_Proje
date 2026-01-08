@@ -1,14 +1,8 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Dict, Any
 import json
+import re
 from agents.safety import SafetyGuard
-
-
-def _clean_json_text(text: str) -> str:
-    # Model bazen ```json ... ``` şeklinde döndürür.
-    cleaned = text.replace("```json", "").replace("```", "").strip()
-    return cleaned
-
 
 class CriticAgent:
     """
@@ -23,100 +17,98 @@ class CriticAgent:
     def __init__(self, llm: Callable[[str], str]):
         self.llm = llm
 
+    def _clean_json_text(self, text: str) -> str:
+        # Markdown kod bloklarını temizle
+        text = text.replace("```json", "").replace("```", "")
+        return text.strip()
+
+    def _fix_json_with_llm(self, broken_text: str, error_msg: str) -> str:
+        """
+        Model bozuk JSON verirse, hatayı gösterip düzeltmesini isteriz.
+        """
+        repair_prompt = f"""
+        Aşağıdaki JSON metninde bir format hatası var.
+        Hata: {error_msg}
+        
+        Bozuk Metin:
+        {broken_text}
+        
+        Görevin:
+        Sadece düzeltilmiş, geçerli JSON'ı döndür. Başka açıklama yapma.
+        """
+        return self.llm(repair_prompt)
+
     def run(self, story_text: str) -> str:
-        # Eğer story_text zaten bir "ret mesajı" ise eleştirmeye kalkma:
-        # (İstersen burada daha sağlam bir kontrol yazabiliriz.)
-        if "yardımcı olamam" in story_text.lower():
+        # Güvenlik reddi varsa eleştirme
+        if "yardımcı olamam" in story_text.lower() or "güvenlik filtresi" in story_text.lower():
             return json.dumps({
-                "general_evaluation": "Bu içerik güvenlik nedeniyle üretilemediği için edebi değerlendirme yapılmadı.",
-                "theme": {"comment": "", "suggestion": ""},
-                "language": {"comment": "", "suggestion": ""},
-                "characters": {"comment": "", "suggestion": ""},
-                "plot": {"comment": "", "suggestion": ""},
-                "strengths": [],
-                "areas_to_improve": [],
-                "confidence_score": 90,
-                "next_step_for_writer": "Güvenli bir tema/istekle tekrar dene (ör. umut, dostluk, keşif)."
-            }, ensure_ascii=False, indent=2)
+                "general_evaluation": "Güvenlik nedeniyle içerik oluşturulamadı.",
+                "strengths": [], "areas_to_improve": [], 
+                "confidence_score": 0, "next_step_for_writer": "Güvenli bir tema seç."
+            }, ensure_ascii=False)
 
         prompt = f"""
-Sen yazarlığa yeni başlamış kişilere rehberlik eden,
-ancak edebi unsurları ciddiyetle değerlendiren bir HİKÂYE ELEŞTİRMENİ etmensin.
+        Sen acımasız değil ama çok titiz bir EDEBİ ELEŞTİRMENSİN.
+        
+        Görevin: Hikayeyi analiz et ve Editörün işini kolaylaştıracak SOMUT öneriler ver.
+        Sadece 'Karakter zayıf' deme. 'Murat karakteri daha çok konuşmalı' gibi net konuş.
 
-GÜVENLİK VE ETİK KURALLAR:
-- Nefret söylemi, taciz, hedef gösterme üretme.
-- Kendine zarar verme / intihar teşviki üretme.
-- Reşit olmayanları içeren cinsel içerik üretme.
-- Yasadışı/tehlikeli eylemlere yönlendirme yapma.
-- Kişisel verileri isteme/yayma yapma.
-- Hikâyeyi yeniden yazma. Sadece geri bildirim ver.
+        Çıktıyı SADECE geçerli bir JSON olarak ver. Format:
+        {{
+          "general_evaluation": "Genel özet",
+          
+          "theme": {{
+            "comment": "Tema analizi",
+            "suggestion": "Temayı güçlendirmek için SOMUT öneri (Örn: Şu cümleyi ekle...)"
+          }},
+          
+          "language": {{
+             "comment": "Dil kullanımı",
+             "suggestion": "Dili düzeltmek için SOMUT öneri"
+          }},
+          
+          "characters": {{
+             "comment": "Karakter analizi",
+             "suggestion": "Karakter gelişimi için SOMUT öneri"
+          }},
+          
+          "plot": {{
+             "comment": "Olay örgüsü",
+             "suggestion": "Kurguyu düzeltmek için SOMUT öneri"
+          }},
+          
+          "strengths": ["Güçlü yön 1", "Güçlü yön 2"],
+          "areas_to_improve": ["Zayıf yön 1", "Zayıf yön 2"],
+          "confidence_score": 85,
+          "next_step_for_writer": "Yazarın yapması gereken tek bir net eylem."
+        }}
 
-Cevabını SADECE şu JSON formatında ver:
+        Hikaye:
+        {story_text}
+        """
 
-{{
-  "general_evaluation": "Hikaye hakkında genel, destekleyici ama gerçekçi değerlendirme",
+        raw_response = self.llm(prompt)
+        cleaned_response = self._clean_json_text(raw_response)
 
-  "theme": {{
-    "comment": "Temanın ne olduğu ve ne kadar net yansıtıldığı",
-    "suggestion": "Temayı güçlendirmek için somut bir öneri"
-  }},
-
-  "language": {{
-    "comment": "Dil ve anlatımın genel durumu",
-    "suggestion": "Dili daha canlı veya etkili yapmak için öner"
-  }},
-
-  "characters": {{
-    "comment": "Karakterlerin derinliği ve tutarlılığı",
-    "suggestion": "Karakterleri geliştirmek için öner"
-  }},
-
-  "plot": {{
-    "comment": "Olay örgüsünün anlaşılırlığı ve akışı",
-    "suggestion": "Olay örgüsünü netleştirmek veya güçlendirmek için öner"
-  }},
-
-  "strengths": [
-    "Hikayenin güçlü yönü 1",
-    "Hikayenin güçlü yönü 2"
-  ],
-
-  "areas_to_improve": [
-    "Geliştirilmeye açık alan 1",
-    "Geliştirilmeye açık alan 2"
-  ],
-
-  "confidence_score": 0 ile 100 arası bir tam sayı,
-
-  "next_step_for_writer": "Yazarın bir sonraki adımda deneyebileceği net ve küçük bir gelişim önerisi"
-}}
-
-Kurallar:
-- Hikâyeyi yeniden yazma.
-- Sert/aşağılayıcı ifade kullanma.
-- Hikaye çok kısaysa bunu nazikçe belirt.
-
-Hikaye:
-{story_text}
-""".strip()
-
-        raw = self.llm(prompt)
-        cleaned = _clean_json_text(raw)
-
-        # Parse edilebilir olsun diye kontrol (UI’da kullanacaksan önemli)
+        # JSON PARSE VE RETRY MEKANİZMASI
         try:
-            data = json.loads(cleaned)
-            return json.dumps(data, ensure_ascii=False, indent=2)
-        except Exception:
-            # Model JSON bozarsa: güvenli hata çıktısı
-            return json.dumps({
-                "general_evaluation": "Geri bildirim üretildi ancak JSON biçimi hatalı geldi. Lütfen tekrar dene.",
-                "theme": {"comment": "", "suggestion": ""},
-                "language": {"comment": "", "suggestion": ""},
-                "characters": {"comment": "", "suggestion": ""},
-                "plot": {"comment": "", "suggestion": ""},
-                "strengths": [],
-                "areas_to_improve": [],
-                "confidence_score": 40,
-                "next_step_for_writer": "Eleştiriyi daha kısa ve net cümlelerle tekrar iste."
-            }, ensure_ascii=False, indent=2)
+            # Önce parse etmeyi dene
+            parsed = json.loads(cleaned_response)
+            return json.dumps(parsed, ensure_ascii=False, indent=2)
+        except json.JSONDecodeError as e:
+            # Hata varsa: 1 kereye mahsus modeli tekrar çağırıp düzelttir
+            print(f"⚠️ JSON hatası algılandı: {e}. Onarılıyor...")
+            fixed_response = self._fix_json_with_llm(cleaned_response, str(e))
+            cleaned_fixed = self._clean_json_text(fixed_response)
+            
+            try:
+                # Tekrar dene
+                parsed = json.loads(cleaned_fixed)
+                return json.dumps(parsed, ensure_ascii=False, indent=2)
+            except Exception:
+                # Yine olmazsa fallback (çökmemesi için)
+                return json.dumps({
+                    "general_evaluation": "Sistem hatası: Eleştiri formatı düzeltilemedi.",
+                    "strengths": [], "areas_to_improve": [], "confidence_score": 0,
+                    "next_step_for_writer": "Lütfen tekrar deneyin."
+                }, ensure_ascii=False)

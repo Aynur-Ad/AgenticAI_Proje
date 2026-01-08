@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Callable
-from agents.safety import SafetyGuard
 
 
 class EditorAgent:
@@ -8,6 +7,7 @@ class EditorAgent:
     Eleştirmen geri bildirimlerini uygulayarak hikayeyi geliştiren Editör Etmeni.
     - Güvenlik kurallarına uyar.
     - Hikayeyi tamamen baştan yazmaz; temel fikri korur.
+    - GÜNCELLEME: Çıktıda başlık veya giriş cümlesi (meta-text) bulunmasını engeller.
     """
 
     def __init__(self, llm: Callable[[str], str]):
@@ -35,16 +35,16 @@ Sana:
 verilecek.
 
 Görevin:
-- Eleştirileri dikkatlice uygula.
-- Hikayeyi daha akıcı ve tutarlı hale getir.
-- Temel fikri KORU.
-- Hikayeyi tamamen baştan yazma.
+- Eleştirmenin JSON içindeki "suggestion" (öneri) kısımlarını MUTLAKA uygula.
+- Hikayenin akışını bozmadan, temel fikri KORUYARAK dili daha edebi ve profesyonel hale getir.
 - Yeni yazarı korkutacak aşırı değişiklikler yapma.
 
-ÖNEMLİ:
-- Eleştiriyi tekrar etme.
-- Akademik açıklama yazma.
-- Sadece GELİŞTİRİLMİŞ HİKAYEYİ yaz.
+ÇOK ÖNEMLİ BİÇİM KURALLARI (BUNA KESİNLİKLE UY):
+1. Çıktıda ASLA 'Başlık: ...', 'Revize Edilmiş Metin' veya '**Başlık**' satırı yazma.
+2. 'İşte düzenlenmiş hali', 'Önerileri uyguladım' gibi giriş cümleleri YAZMA.
+3. SADECE ve SADECE revize edilmiş hikaye metnini yaz.
+4. Doğrudan hikayenin ilk cümlesiyle başla.
+5. Eleştiriyi tekrar etme veya açıklama yapma.
 
 Hikaye Taslağı:
 {story_text}
@@ -55,4 +55,32 @@ Eleştirmen Geri Bildirimi (JSON):
 Geliştirilmiş Hikaye:
 """.strip()
 
-        return self.llm(prompt)
+        # LLM'i çağır ve boşlukları temizle
+        raw_text = self.llm(prompt).strip()
+
+        # Manuel Temizlik (Fallback):
+        # Eğer model hala inatla "Başlık:" veya "Revize Metin:" gibi şeyler yazarsa onları siliyoruz.
+        lines = raw_text.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            lower_line = line.lower().strip()
+            
+            # Başlık satırlarını atla
+            if lower_line.startswith("başlık:") or lower_line.startswith("**başlık"):
+                continue
+            
+            # "Revize edilmiş metin:" gibi başlıkları atla
+            if lower_line.startswith("revize") or lower_line.startswith("geliştirilmiş"):
+                continue
+                
+            # "İşte hikayeniz" tarzı sohbet cümlelerini atla
+            if "işte" in lower_line and "hikaye" in lower_line:
+                continue
+                
+            cleaned_lines.append(line)
+
+        # Temizlenmiş satırları birleştir
+        final_story_text = "\n".join(cleaned_lines).strip()
+
+        return final_story_text

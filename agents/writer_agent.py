@@ -1,14 +1,15 @@
 from __future__ import annotations
-from typing import Dict, List, Callable, Optional
+from typing import Dict, List, Callable, Optional, Any
 from agents.safety import SafetyGuard
 
 
 class WriterAgent:
     """
-    Writer Agent
+    Writer Agent - GÜNCELLENMİŞ
     - Yeni yazarlara yönelik hikaye taslağı üretir.
     - Güvenlik/etik kurallara uyar.
     - Belirsiz girişlerde netleştirici soru üretebilir.
+    - Başlık tekrarını ve sohbet cümlelerini engeller.
     """
 
     def __init__(self, llm: Callable[[str], str]):
@@ -94,13 +95,14 @@ Aşağıdaki bilgilere dayanarak {length_hint}, akıcı ve anlaşılır bir hik�
 - Tema, karakter ve olay örgüsü hissedilmeli.
 - Editör/eleştirmen tarafından geliştirilebilir boşluklar bırak.
 
-Kurallar:
-- Türkçe yaz.
-- Giriş, gelişme ve sonuç olsun.
-- Aşırı edebi veya karmaşık dil kullanma.
-- Okuyucu için doğal ve anlaşılır bir anlatım kullan.
+ÇOK ÖNEMLİ BİÇİM KURALLARI (BUNA KESİNLİKLE UY):
+1. Çıktıda ASLA 'Başlık: ...' veya '**Başlık**' satırı yazma.
+2. 'Harika bir fikir', 'İşte taslağınız' gibi giriş cümleleri YAZMA.
+3. 'Giriş:', 'Gelişme:', 'Sonuç:' gibi bölüm başlıkları ATMA.
+4. SADECE ve SADECE hikaye metnini yaz.
+5. Doğrudan hikayenin ilk cümlesiyle başla.
 
-Başlık: {title}
+Başlık (Sadece konu için): {title}
 Tür: {genre}
 Karakterler: {characters}
 Tema: {theme}
@@ -115,21 +117,44 @@ Tema: {theme}
         prompt += "\n\nHikâye Taslağı:\n"
         return prompt
 
-    def generate_draft(self, user_input: Dict) -> str:
-        # 1) Güvenlik ön kontrolü
-         
-    # Güvenlik kontrolünü burada tamamen devre dışı bırakabilir 
-    # veya sadece bilgilendirme amaçlı tutabilirsiniz.
-    # Çünkü ana kontrol zaten main.py içinde yapıldı.
-
-        prompt = self._build_prompt(user_input)
-        return self.llm(prompt) # Doğrudan hikaye üretimine geç
-
-        # 2) Belirsizlik yönetimi (istersen burada soru döndürebilirsin)
+    def generate_draft(self, user_input: Dict) -> Dict[str, Any]:
+        """
+        Dönüş:
+        {
+           "type": "draft" | "clarification",
+           "content": str (hikaye metni) | list (soru listesi)
+        }
+        """
+        # 1) Belirsizlik kontrolü
         if self._needs_clarification(user_input):
             questions = self.build_clarifying_questions(user_input)
-            # Bu tasarımda direkt soru listesi dönüyoruz (UI’da kullanıcıya sorup tekrar çağırabilirsin).
-            return "İsteğini netleştirmek için birkaç soru:\n- " + "\n- ".join(questions)
+            return {
+                "type": "clarification",
+                "content": questions  # List[str] döner
+            }
 
+        # 2) Hikaye üretimi
         prompt = self._build_prompt(user_input)
-        return self.llm(prompt)
+        
+        # LLM çıktısını al ve temizle
+        raw_text = self.llm(prompt).strip()
+        
+        # Manuel temizlik: Model inatla "Başlık:" yazarsa silelim
+        lines = raw_text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            lower_line = line.lower().strip()
+            # Başlık satırlarını atla
+            if lower_line.startswith("başlık:") or lower_line.startswith("**başlık"):
+                continue
+            # Sohbet giriş cümlelerini atla
+            if "işte taslağınız" in lower_line or "hikaye taslağı:" in lower_line:
+                continue
+            cleaned_lines.append(line)
+            
+        final_story_text = "\n".join(cleaned_lines).strip()
+        
+        return {
+            "type": "draft",
+            "content": final_story_text
+        }
