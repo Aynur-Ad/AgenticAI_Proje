@@ -1,5 +1,13 @@
 import sys
 import os
+from llm.llm_config import get_llm
+from agents.writer_agent import WriterAgent
+from agents.critic_agent import CriticAgent
+from agents.editor_agent import EditorAgent
+from core.pipeline import StoryWorkshopPipeline
+from agents.safety import SafetyGuard
+from app.gui_interface import create_gui
+
 
 def main():
     print("==========================================")
@@ -41,4 +49,5 @@ def main():
             print("Hatalı giriş! Lütfen sadece 'T' veya 'G' yazıp Enter'a basın.")
 
 if __name__ == "__main__":
-    main()
+    
+    create_gui()

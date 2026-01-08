@@ -8,4 +8,12 @@ __pycache__/
 
 # OS
 .DS_Store
+*.pyo
+
+# Virtual env
+.venv/
+venv/
+
+# Environment variables
+.env
 
