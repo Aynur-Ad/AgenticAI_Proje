@@ -120,12 +120,9 @@ Proje, temel fonksiyonlarını yerine getiren çalışan bir prototip sürümün
 ✅ Entegrasyon: Tüm modüller birbirine bağlandı ve test edildi.
 
 👥 Proje Ekibi
-Aynur Adıbelli
 
+Aynur Adıbelli
 Erva Nur Bostancı
 
 📄 Lisans
 Bu proje eğitim ve araştırma amaçlı geliştirilmiştir.
-    style Writer fill:#74b9ff,stroke:#0984e3,stroke-width:2px
-    style Critic fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px
-    style Editor fill:#55efc4,stroke:#00b894,stroke-width:2px
