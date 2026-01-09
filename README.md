@@ -82,41 +82,49 @@ Verinin kullanıcıdan çıktıya kadar izlediği yol aşağıdadır:
 
 ---
 
-## 🏗 Sistem Mimarisi ve Teknoloji
+🏗 Sistem Mimarisi ve Teknoloji
 Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
 
-* **Arayüz Katmanı:**
-    * `app/gui_interface.py`: Tkinter tabanlı, sekmeli ve modern masaüstü arayüzü.
-    * `app/interface.py`: Komut satırı (CLI) arayüzü.
-* **Çekirdek Katmanı (`core/`):** Etmenlerin sırasını ve veri akışını yöneten Pipeline yapısı.
-* **Etmenler Katmanı (`agents/`):** Her biri özelleşmiş Prompt mühendisliği ile donatılmış sınıflar.
-* **LLM Katmanı:** OpenAI (GPT) veya Google (Gemini) modelleriyle entegre yapı.
+Arayüz Katmanı:
 
-### 🛠 Kullanılan Teknolojiler
-* **Dil:** Python 3.10+
-* **Yapay Zeka:** LangChain, OpenAI API / Google Gemini API
-* **Arayüz:** Tkinter (Python yerleşik GUI), Threading (Asenkron işlemler için)
-* **Veri İşleme:** Regex, Fuzzy Logic (Levenshtein Distance), JSON Parsing
+app/gui_interface.py: Tkinter tabanlı, sekmeli ve modern masaüstü arayüzü.
 
----
+app/interface.py: Komut satırı (CLI) arayüzü.
 
-## 🚧 Geliştirme Durumu
+Çekirdek Katmanı (core/): Etmenlerin sırasını ve veri akışını yöneten Pipeline yapısı.
+
+Etmenler Katmanı (agents/): Her biri özelleşmiş Prompt mühendisliği ile donatılmış sınıflar.
+
+LLM Katmanı: OpenAI (GPT) veya Google (Gemini) modelleriyle entegre yapı.
+
+🛠 Kullanılan Teknolojiler
+Dil: Python 3.10+
+
+Yapay Zeka: LangChain, OpenAI API / Google Gemini API
+
+Arayüz: Tkinter (Python yerleşik GUI), Threading (Asenkron işlemler için)
+
+Veri İşleme: Regex, Fuzzy Logic (Levenshtein Distance), JSON Parsing
+
+🚧 Geliştirme Durumu
 Proje, temel fonksiyonlarını yerine getiren çalışan bir prototip sürümündedir.
 
-* ✅ **Sistem Mimarisi:** Pipeline ve Modüler yapı tamamlandı.
-* ✅ **Etmenler:** Yazar, Eleştirmen, Editör ve Güvenlik etmenleri aktif.
-* ✅ **Güvenlik:** Regex, Fuzzy ve LLM tabanlı hibrit filtreleme sistemi eklendi.
-* ✅ **Otomatik Düzeltme:** Yazım hatalarını ve karakter isimlerini düzelten akıllı modül eklendi.
-* ✅ **Arayüz:** Hem Terminal hem de Pencereli (GUI) arayüz tamamlandı.
-* ✅ **Entegrasyon:** Tüm modüller birbirine bağlandı ve test edildi.
+✅ Sistem Mimarisi: Pipeline ve Modüler yapı tamamlandı.
 
----
+✅ Etmenler: Yazar, Eleştirmen, Editör ve Güvenlik etmenleri aktif.
 
-## 👥 Proje Ekibi
-* **Aynur Adıbelli**
-* **Erva Nur Bostancı**
+✅ Güvenlik: Regex, Fuzzy ve LLM tabanlı hibrit filtreleme sistemi eklendi.
 
----
+✅ Otomatik Düzeltme: Yazım hatalarını ve karakter isimlerini düzelten akıllı modül eklendi.
 
-## 📄 Lisans
+✅ Arayüz: Hem Terminal hem de Pencereli (GUI) arayüz tamamlandı.
+
+✅ Entegrasyon: Tüm modüller birbirine bağlandı ve test edildi.
+
+👥 Proje Ekibi
+Aynur Adıbelli
+
+Erva Nur Bostancı
+
+📄 Lisans
 Bu proje eğitim ve araştırma amaçlı geliştirilmiştir.
