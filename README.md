@@ -40,44 +40,45 @@ Yazarın taslağını ve Eleştirmenin notlarını alarak hikâyeyi revize eder,
 
 ## 🔄 Sistem Akışı
 
-Aşağıdaki şema, verinin kullanıcıdan çıktıya kadar izlediği yolu göstermektedir:
+Verinin kullanıcıdan çıktıya kadar izlediği yol aşağıdadır:
 
-```mermaid
-graph TD
-    %% Başlangıç
-    Start([👤 Kullanıcı Girdisi]) -->|Başlık, Tür, Karakterler, Tema| TypoFixer
-
-    %% Ön İşleme
-    subgraph PreProcessing [🛠️ Ön İşleme Katmanı]
-        direction TB
-        TypoFixer[🧠 Akıllı Düzeltmen<br/>LLM-Based]
-        TypoFixer -->|Düzeltilmiş Veri| SafetyGuard
-        SafetyGuard{🛡️ Güvenlik Görevlisi<br/>Regex + Fuzzy + LLM}
-    end
-
-    %% Güvenlik Kararı
-    SafetyGuard -- ⛔ Yasaklı/Riskli --> Block([❌ İşlem Durdurulur / Uyarı])
-    SafetyGuard -- ⚠️ Sınırda/Borderline --> SafeMode{Güvenli Mod<br/>Onayı?}
-    SafeMode -- Hayır --> Block
-    SafeMode -- Evet --> Writer
-    SafetyGuard -- ✅ Güvenli --> Writer
-
-    %% Ajanlar (Pipeline)
-    subgraph Workshop [🏭 Yapay Hikaye Atölyesi]
-        direction TB
-        Writer[✍️ Yazar Etmen<br/>İlk Taslak] -->|Taslak Metin| Critic
-        Critic[🧐 Eleştirmen Etmen<br/>Analiz & Rapor] -->|Taslak + Geri Bildirim| Editor
-        Editor[📝 Editör Etmen<br/>Revize & Final]
-    end
-
-    %% Bitiş
-    Editor -->|📄 Final Hikaye| Output([📚 Çıktı Ekranı])
-
-    %% Stiller
-    style Start fill:#f9f,stroke:#333,stroke-width:2px
-    style Output fill:#f9f,stroke:#333,stroke-width:2px
-    style SafetyGuard fill:#ffcccb,stroke:#d63031,stroke-width:2px
-    style TypoFixer fill:#ffeaa7,stroke:#fdcb6e,stroke-width:2px
+```text
++---------------------+
+|  👤 Kullanıcı       |
+| (Başlık/Tür/Tema)   |
++----------+----------+
+           |
+           v
++-----------------------------+
+| 🧠 Akıllı Düzeltmen (Typo)  | <--- Yazım hatalarını düzeltir
+|     (LLM-Based Fixer)       |      ("kucuk" -> "Küçük")
++----------+------------------+
+           |
+           v
++-----------------------------+
+| 🛡️ Güvenlik Görevlisi       | <--- İçerik Denetimi
+| (Regex + Fuzzy + LLM Score) |
++----------+------------------+
+           |
+    +------+-------+
+    |              |
+ ⛔ Yasaklı     ✅ Güvenli / ⚠️ Onaylı (Güvenli Mod)
+    |              |
+    v              v
++-------+   +-----------------------------+
+| İPTAL |   | 🏭 YAPAY HİKAYE ATÖLYESİ    |
++-------+   |                             |
+            |  1. ✍️ Yazar (Taslak)       |
+            |             ⬇               |
+            |  2. 🧐 Eleştirmen (Analiz)  |
+            |             ⬇               |
+            |  3. 📝 Editör (Revize)      |
+            +-------------+---------------+
+                          |
+                          v
+                  +-------+-------+
+                  | 📚 FİNAL ÇIKTI|
+                  +---------------+
 
 🏗 Sistem Mimarisi ve Teknoloji
 Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
