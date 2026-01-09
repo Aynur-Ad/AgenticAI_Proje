@@ -1,106 +1,129 @@
-📚 Yapay Hikâye Atölyesi
+# 📚 Yapay Hikâye Atölyesi
+### Üretken Yapay Zekâ, Güvenlik Koruması ve Çok-Etmenli Mimari
 
-Üretken Yapay Zekâ ile Çok-Etmenli Hikâye Üretim Sistemi
+**Yapay Hikâye Atölyesi**, üretken yapay zekâ modellerini, çok-etmenli (multi-agent) mimariyi ve gelişmiş güvenlik filtrelerini birleştirerek kullanıcı girdilerine göre yaratıcı, güvenli ve edebi hikâyeler üreten bir sistemdir.
 
-Yapay Hikâye Atölyesi, üretken yapay zekâ modelleri ve çok-etmenli mimariyi birleştirerek kullanıcı girdilerine göre yaratıcı hikâyeler üreten bir yapıdır. Sistem; Yazar, Eleştirmen ve Editör olmak üzere üç yapay zekâ etmeninin sırayla çalıştığı bir hikâye üretim zinciri hedefler.
+Sistem; kullanıcı hatalarını otomatik düzelten bir ön işleyici, içerik güvenliğini sağlayan bir denetçi ve hikâyeyi adım adım oluşturan **Yazar, Eleştirmen ve Editör** etmenlerinden oluşur.
 
-Bu repo, projenin temel mimari tasarımını ve geliştirme sürecini içerir.
+---
 
-🎯 Projenin Amacı
+## 🎯 Projenin Amacı
+* **Otomatik Hikâye Üretimi:** Kullanıcı girdilerine (Başlık, Tür, Karakterler, Tema) dayalı özgün hikâyeler oluşturmak.
+* **İnsan-Yapay Zeka İşbirliği:** Bir yayın evindeki yazı ekibini (Yazar → Eleştirmen → Editör) yapay zeka ajanlarıyla simüle etmek.
+* **Güvenlik ve Etik:** Zararlı içerikleri (şiddet, nefret söylemi vb.) filtreleyerek veya "Güvenli Mod" (PG-13) çerçevesinde işleyerek sorumlu yapay zeka kullanımı sağlamak.
+* **Akıllı Kullanıcı Deneyimi:** Kullanıcının yazım hatalarını (Typo) tolere eden ve otomatik düzelten akıllı bir arayüz sunmak.
 
-Kullanıcı girdilerine dayalı otomatik hikâye üretmek
+---
 
-Yazar → Eleştirmen → Editör sıralı etmen yapısı kurmak
+## 🧩 Etmen ve Modül Yapısı
+Sistem, özelleşmiş görevlere sahip yapay zekâ etmenlerinin iş birliği ile çalışır:
 
-Çok-etmenli yapay zekâ yaklaşımıyla daha tutarlı ve kaliteli metinler üretmek
+### 🧠 1. Akıllı Düzeltmen (Typo Fixer)
+Sistemin giriş kapısıdır. Kullanıcının girdiği verileri (örn: "kucuk prns", "drma") analiz eder; bunları doğru Türkçe formuna, kitap/film adlarına ve Title Case formatına otomatik olarak çevirir.
 
-İnsan yazı ekibine benzer bir üretim sürecini yapay zekâ ile simüle etmek
+### 🛡️ 2. Güvenlik Görevlisi (Safety Guard)
+Düzeltilmiş içeriği tarar ve analiz eder:
+* **Fuzzy Matching:** Yazım hatalı yasaklı kelimeleri (Regex + Levenshtein) yakalar.
+* **LLM Analizi:** Tür masum olsa bile (örn: Masal) temanın şiddet içerip içermediğini kontrol eder.
+* **Güvenli Mod:** Sınırda (borderline) içerikler için kullanıcı onayıyla içeriği yumuşatır (PG-13).
 
-🧩 Etmen Yapısı (Hedeflenen)
+### ✍️ 3. Yazar Etmen (Writer Agent)
+Doğrulanmış ve güvenli girdilere göre hikâyenin ilk taslağını oluşturur. Başlık tekrarlarından kaçınır ve doğrudan kurguya odaklanır.
 
-✍️ Yazar Etmen
+### 🧐 4. Eleştirmen Etmen (Critic Agent)
+Taslağı edebi açıdan (akış, karakter gelişimi, tutarlılık) inceler ve JSON formatında somut geliştirme önerileri sunar.
 
-Kullanıcıdan alınan tür, karakter, tema ve uzunluk bilgilerine göre ilk hikâye taslağını oluşturması hedeflenmektedir.
+### 📝 5. Editör Etmen (Editor Agent)
+Yazarın taslağını ve Eleştirmenin notlarını alarak hikâyeyi revize eder, parlatır ve son haline getirir.
 
-🧐 Eleştirmen Etmen
+---
 
-Üretilen taslağı analiz ederek geliştirme önerileri ve değerlendirmeler sunması planlanmaktadır.
+## 🔄 Sistem Akışı
 
-📝 Editör Etmen
+Aşağıdaki şema, verinin kullanıcıdan çıktıya kadar izlediği yolu göstermektedir:
 
-Eleştirmen Etmenin geri bildirimlerini işleyerek geliştirilmiş son metni oluşturması hedeflenmektedir.
+```mermaid
+graph TD
+    %% Başlangıç
+    Start([👤 Kullanıcı Girdisi]) -->|Başlık, Tür, Karakterler, Tema| TypoFixer
 
-Bu etmenlerin her biri, kendi rolüne uygun şekilde GPT tabanlı modellerle çalışacaktır.
+    %% Ön İşleme
+    subgraph PreProcessing [🛠️ Ön İşleme Katmanı]
+        direction TB
+        TypoFixer[🧠 Akıllı Düzeltmen<br/>LLM-Based]
+        TypoFixer -->|Düzeltilmiş Veri| SafetyGuard
+        SafetyGuard{🛡️ Güvenlik Görevlisi<br/>Regex + Fuzzy + LLM}
+    end
 
-🔄 Planlanan Sistem Akışı
+    %% Güvenlik Kararı
+    SafetyGuard -- ⛔ Yasaklı/Riskli --> Block([❌ İşlem Durdurulur / Uyarı])
+    SafetyGuard -- ⚠️ Sınırda/Borderline --> SafeMode{Güvenli Mod<br/>Onayı?}
+    SafeMode -- Hayır --> Block
+    SafeMode -- Evet --> Writer
+    SafetyGuard -- ✅ Güvenli --> Writer
 
-Kullanıcı arayüzünden hikâye bilgileri alınır.
+    %% Ajanlar (Pipeline)
+    subgraph Workshop [🏭 Yapay Hikaye Atölyesi]
+        direction TB
+        Writer[✍️ Yazar Etmen<br/>İlk Taslak] -->|Taslak Metin| Critic
+        Critic[🧐 Eleştirmen Etmen<br/>Analiz & Rapor] -->|Taslak + Geri Bildirim| Editor
+        Editor[📝 Editör Etmen<br/>Revize & Final]
+    end
 
-Yazar Etmen ilk taslağı üretir.
+    %% Bitiş
+    Editor -->|📄 Final Hikaye| Output([📚 Çıktı Ekranı])
 
-Eleştirmen Etmen taslağı analiz edip geri bildirim üretir.
+    %% Stiller
+    style Start fill:#f9f,stroke:#333,stroke-width:2px
+    style Output fill:#f9f,stroke:#333,stroke-width:2px
+    style SafetyGuard fill:#ffcccb,stroke:#d63031,stroke-width:2px
+    style TypoFixer fill:#ffeaa7,stroke:#fdcb6e,stroke-width:2px
+🏗 Sistem Mimarisi ve Teknoloji
+Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
 
-Editör Etmen hikâyeyi geliştirir.
+Arayüz Katmanı:
 
-Nihai çıktı kullanıcıya sunulur.
+app/gui_interface.py: Tkinter tabanlı, sekmeli ve modern masaüstü arayüzü.
 
-🏗 Sistem Mimarisi
+app/interface.py: Komut satırı (CLI) arayüzü.
 
-Şu an için tamamlanmış tek kısım sistem mimarisidir.
-Etmenlerin görev dağılımı, veri akışı ve modüler yapı tasarlanmıştır.
+Çekirdek Katmanı (core/): Etmenlerin sırasını ve veri akışını yöneten Pipeline yapısı.
 
-Mimari aşağıdaki bileşenlerden oluşmaktadır:
+Etmenler Katmanı (agents/): Her biri özelleşmiş Prompt mühendisliği ile donatılmış sınıflar.
 
-Kullanıcı Arayüzü (planlandı – henüz yapılmadı)
+LLM Katmanı: OpenAI (GPT) veya Google (Gemini) modelleriyle entegre yapı.
 
-Etmen Modülleri (tasarlandı – geliştirme aşamasında)
+🛠 Kullanılan Teknolojiler
+Dil: Python 3.10+
 
-API / Model Katmanı (GPT-4 ve HF modelleri – planlandı)
+Yapay Zeka: LangChain, OpenAI API / Google Gemini API
 
-Veri Akışı (tamamlanan mimari tasarım kapsamında netleştirildi)
+Arayüz: Tkinter (Python yerleşik GUI), Threading (Asenkron işlemler için)
 
-Mimari tasarım sayesinde tüm etmenler sırayla ve kontrollü bir şekilde birbirine bağlı çalışacaktır.
-
-🛠 Kullanılacak Teknolojiler
-
-📌 Henüz geliştirme aşamasındadır — ancak planlanan teknoloji yığını:
-
-Amaç	Teknoloji
-Üretim & analiz	OpenAI GPT-4, Hugging Face Transformers
-Etmen yapısı	LangChain Agents / custom Python classes
-Arayüz	Streamlit veya Flask
-Dil	Python
-Yardımcı modüller	dotenv, json, requests
+Veri İşleme: Regex, Fuzzy Logic (Levenshtein Distance), JSON Parsing
 
 🚧 Geliştirme Durumu
+Proje, temel fonksiyonlarını yerine getiren çalışan bir prototip sürümündedir.
 
-Bu proje aktif geliştirme aşamasındadır.
+✅ Sistem Mimarisi: Pipeline ve Modüler yapı tamamlandı.
 
-✔ Sistem mimarisi ve etmen akış tasarımı hazır
+✅ Etmenler: Yazar, Eleştirmen, Editör ve Güvenlik etmenleri aktif.
 
- Yazar Etmen geliştirilme sürecinde.
+✅ Güvenlik: Regex, Fuzzy ve LLM tabanlı hibrit filtreleme sistemi eklendi.
 
- Eleştirmen Etmen geliştirilme sürecinde.
+✅ Otomatik Düzeltme: Yazım hatalarını ve karakter isimlerini düzelten akıllı modül eklendi.
 
-❌ Editör Etmen geliştirilmedi
+✅ Arayüz: Hem Terminal hem de Pencereli (GUI) arayüz tamamlandı.
 
-❌ Arayüz oluşturulmadı
-
-❌ Etmenler arası mesaj akışı uygulanmadı
-
-❌ Model testleri yapılmadı
-
-❌ Tam entegrasyon yapılmadı
-
-🎯 Mevcut durum:
-Projenin yalnızca teorik ve yapısal tasarımı tamamlanmıştır. Uygulama kodları geliştirilmeye başlanmış ancak tamamlanmamıştır.
+✅ Entegrasyon: Tüm modüller birbirine bağlandı ve test edildi.
 
 👥 Proje Ekibi
-
 Aynur Adıbelli
 
 Erva Nur Bostancı
 
 📄 Lisans
-
-Bu proje eğitim amaçlı geliştirilmiştir.
+Bu proje eğitim ve araştırma amaçlı geliştirilmiştir.
+    style Writer fill:#74b9ff,stroke:#0984e3,stroke-width:2px
+    style Critic fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px
+    style Editor fill:#55efc4,stroke:#00b894,stroke-width:2px
