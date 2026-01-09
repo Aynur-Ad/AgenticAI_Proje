@@ -78,6 +78,7 @@ graph TD
     style Output fill:#f9f,stroke:#333,stroke-width:2px
     style SafetyGuard fill:#ffcccb,stroke:#d63031,stroke-width:2px
     style TypoFixer fill:#ffeaa7,stroke:#fdcb6e,stroke-width:2px
+
 🏗 Sistem Mimarisi ve Teknoloji
 Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
 
