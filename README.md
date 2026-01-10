@@ -83,10 +83,10 @@ Verinin kullanıcıdan çıktıya kadar izlediği yol aşağıdadır:
 ```
 
 
-🏗 Sistem Mimarisi ve Teknoloji
+## 🏗 Sistem Mimarisi ve Teknoloji
 Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
 
-Arayüz Katmanı:
+### Arayüz Katmanı:
 
 app/gui_interface.py: Tkinter tabanlı, sekmeli ve modern masaüstü arayüzü.
 
@@ -98,7 +98,7 @@ Etmenler Katmanı (agents/): Her biri özelleşmiş Prompt mühendisliği ile do
 
 LLM Katmanı: OpenAI (GPT) veya Google (Gemini) modelleriyle entegre yapı.
 
-🛠 Kullanılan Teknolojiler
+### 🛠 Kullanılan Teknolojiler
 Dil: Python 3.10+
 
 Yapay Zeka: LangChain, OpenAI API / Google Gemini API
@@ -107,7 +107,7 @@ Arayüz: Tkinter (Python yerleşik GUI), Threading (Asenkron işlemler için)
 
 Veri İşleme: Regex, Fuzzy Logic (Levenshtein Distance), JSON Parsing
 
-🚧 Geliştirme Durumu
+### 🚧 Geliştirme Durumu
 Proje, temel fonksiyonlarını yerine getiren çalışan bir prototip sürümündedir.
 
 ✅ Sistem Mimarisi: Pipeline ve Modüler yapı tamamlandı.
@@ -122,10 +122,10 @@ Proje, temel fonksiyonlarını yerine getiren çalışan bir prototip sürümün
 
 ✅ Entegrasyon: Tüm modüller birbirine bağlandı ve test edildi.
 
-👥 Proje Ekibi
+### 👥 Proje Ekibi
 Aynur Adıbelli
 
 Erva Nur Bostancı
 
-📄 Lisans
+### 📄 Lisans
 Bu proje eğitim ve araştırma amaçlı geliştirilmiştir.
