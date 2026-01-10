@@ -2,7 +2,7 @@ import sys
 import os
 
 # Proje dizinini yola ekle (Import hatası almamak için şart)
-# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def main():
     print("==========================================")
