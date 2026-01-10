@@ -1,106 +1,131 @@
-📚 Yapay Hikâye Atölyesi
+# 📚 Yapay Hikâye Atölyesi
+### Üretken Yapay Zekâ, Güvenlik Koruması ve Çok-Etmenli Mimari
 
-Üretken Yapay Zekâ ile Çok-Etmenli Hikâye Üretim Sistemi
+**Yapay Hikâye Atölyesi**, üretken yapay zekâ modellerini, çok-etmenli (multi-agent) mimariyi ve gelişmiş güvenlik filtrelerini birleştirerek kullanıcı girdilerine göre yaratıcı, güvenli ve edebi hikâyeler üreten bir sistemdir.
 
-Yapay Hikâye Atölyesi, üretken yapay zekâ modelleri ve çok-etmenli mimariyi birleştirerek kullanıcı girdilerine göre yaratıcı hikâyeler üreten bir yapıdır. Sistem; Yazar, Eleştirmen ve Editör olmak üzere üç yapay zekâ etmeninin sırayla çalıştığı bir hikâye üretim zinciri hedefler.
+Sistem; kullanıcı hatalarını otomatik düzelten bir ön işleyici, içerik güvenliğini sağlayan bir denetçi ve hikâyeyi adım adım oluşturan **Yazar, Eleştirmen ve Editör** etmenlerinden oluşur.
 
-Bu repo, projenin temel mimari tasarımını ve geliştirme sürecini içerir.
+---
 
-🎯 Projenin Amacı
+## 🎯 Projenin Amacı
+* **Otomatik Hikâye Üretimi:** Kullanıcı girdilerine (Başlık, Tür, Karakterler, Tema) dayalı özgün hikâyeler oluşturmak.
+* **İnsan-Yapay Zeka İşbirliği:** Bir yayın evindeki yazı ekibini (Yazar → Eleştirmen → Editör) yapay zeka ajanlarıyla simüle etmek.
+* **Güvenlik ve Etik:** Zararlı içerikleri (şiddet, nefret söylemi vb.) filtreleyerek veya "Güvenli Mod" (PG-13) çerçevesinde işleyerek sorumlu yapay zeka kullanımı sağlamak.
+* **Akıllı Kullanıcı Deneyimi:** Kullanıcının yazım hatalarını (Typo) tolere eden ve otomatik düzelten akıllı bir arayüz sunmak.
 
-Kullanıcı girdilerine dayalı otomatik hikâye üretmek
+---
 
-Yazar → Eleştirmen → Editör sıralı etmen yapısı kurmak
+## 🧩 Etmen ve Modül Yapısı
+Sistem, özelleşmiş görevlere sahip yapay zekâ etmenlerinin iş birliği ile çalışır:
 
-Çok-etmenli yapay zekâ yaklaşımıyla daha tutarlı ve kaliteli metinler üretmek
+### 🧠 1. Akıllı Düzeltmen (Typo Fixer)
+Sistemin giriş kapısıdır. Kullanıcının girdiği verileri (örn: "kucuk prns", "drma") analiz eder; bunları doğru Türkçe formuna, kitap/film adlarına ve Title Case formatına otomatik olarak çevirir.
 
-İnsan yazı ekibine benzer bir üretim sürecini yapay zekâ ile simüle etmek
+### 🛡️ 2. Güvenlik Görevlisi (Safety Guard)
+Düzeltilmiş içeriği tarar ve analiz eder:
+* **Fuzzy Matching:** Yazım hatalı yasaklı kelimeleri (Regex + Levenshtein) yakalar.
+* **LLM Analizi:** Tür masum olsa bile (örn: Masal) temanın şiddet içerip içermediğini kontrol eder.
+* **Güvenli Mod:** Sınırda (borderline) içerikler için kullanıcı onayıyla içeriği yumuşatır (PG-13).
 
-🧩 Etmen Yapısı (Hedeflenen)
+### ✍️ 3. Yazar Etmen (Writer Agent)
+Doğrulanmış ve güvenli girdilere göre hikâyenin ilk taslağını oluşturur. Başlık tekrarlarından kaçınır ve doğrudan kurguya odaklanır.
 
-✍️ Yazar Etmen
+### 🧐 4. Eleştirmen Etmen (Critic Agent)
+Taslağı edebi açıdan (akış, karakter gelişimi, tutarlılık) inceler ve JSON formatında somut geliştirme önerileri sunar.
 
-Kullanıcıdan alınan tür, karakter, tema ve uzunluk bilgilerine göre ilk hikâye taslağını oluşturması hedeflenmektedir.
+### 📝 5. Editör Etmen (Editor Agent)
+Yazarın taslağını ve Eleştirmenin notlarını alarak hikâyeyi revize eder, parlatır ve son haline getirir.
 
-🧐 Eleştirmen Etmen
+---
 
-Üretilen taslağı analiz ederek geliştirme önerileri ve değerlendirmeler sunması planlanmaktadır.
+## 🔄 Sistem Akışı
 
-📝 Editör Etmen
+Verinin kullanıcıdan çıktıya kadar izlediği yol aşağıdadır:
 
-Eleştirmen Etmenin geri bildirimlerini işleyerek geliştirilmiş son metni oluşturması hedeflenmektedir.
+```text
++---------------------+
+|  👤 Kullanıcı       |
+| (Başlık/Tür/Tema)   |
++----------+----------+
+           |
+           v
++-----------------------------+
+| 🧠 Akıllı Düzeltmen (Typo)  | <--- Yazım hatalarını düzeltir
+|     (LLM-Based Fixer)       |      ("kucuk" -> "Küçük")
++----------+------------------+
+           |
+           v
++-----------------------------+
+| 🛡️ Güvenlik Görevlisi       | <--- İçerik Denetimi
+| (Regex + Fuzzy + LLM Score) |
++----------+------------------+
+           |
+    +------+-------+
+    |              |
+ ⛔ Yasaklı     ✅ Güvenli / ⚠️ Onaylı (Güvenli Mod)
+    |              |
+    v              v
++-------+   +-----------------------------+
+| İPTAL |   | 🏭 YAPAY HİKAYE ATÖLYESİ    |
++-------+   |                             |
+            |  1. ✍️ Yazar (Taslak)       |
+            |             ⬇               |
+            |  2. 🧐 Eleştirmen (Analiz)  |
+            |             ⬇               |
+            |  3. 📝 Editör (Revize)      |
+            +-------------+---------------+
+                          |
+                          v
+                  +-------+-------+
+                  | 📚 FİNAL ÇIKTI|
+                  +---------------+
 
-Bu etmenlerin her biri, kendi rolüne uygun şekilde GPT tabanlı modellerle çalışacaktır.
+```
 
-🔄 Planlanan Sistem Akışı
 
-Kullanıcı arayüzünden hikâye bilgileri alınır.
+## 🏗 Sistem Mimarisi ve Teknoloji
+Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
 
-Yazar Etmen ilk taslağı üretir.
+### Arayüz Katmanı:
 
-Eleştirmen Etmen taslağı analiz edip geri bildirim üretir.
+app/gui_interface.py: Tkinter tabanlı, sekmeli ve modern masaüstü arayüzü.
 
-Editör Etmen hikâyeyi geliştirir.
+app/interface.py: Komut satırı (CLI) arayüzü.
 
-Nihai çıktı kullanıcıya sunulur.
+Çekirdek Katmanı (core/): Etmenlerin sırasını ve veri akışını yöneten Pipeline yapısı.
 
-🏗 Sistem Mimarisi
+Etmenler Katmanı (agents/): Her biri özelleşmiş Prompt mühendisliği ile donatılmış sınıflar.
 
-Şu an için tamamlanmış tek kısım sistem mimarisidir.
-Etmenlerin görev dağılımı, veri akışı ve modüler yapı tasarlanmıştır.
+LLM Katmanı: OpenAI (GPT) veya Google (Gemini) modelleriyle entegre yapı.
 
-Mimari aşağıdaki bileşenlerden oluşmaktadır:
+### 🛠 Kullanılan Teknolojiler
+Dil: Python 3.10+
 
-Kullanıcı Arayüzü (planlandı – henüz yapılmadı)
+Yapay Zeka: LangChain, OpenAI API / Google Gemini API
 
-Etmen Modülleri (tasarlandı – geliştirme aşamasında)
+Arayüz: Tkinter (Python yerleşik GUI), Threading (Asenkron işlemler için)
 
-API / Model Katmanı (GPT-4 ve HF modelleri – planlandı)
+Veri İşleme: Regex, Fuzzy Logic (Levenshtein Distance), JSON Parsing
 
-Veri Akışı (tamamlanan mimari tasarım kapsamında netleştirildi)
+### 🚧 Geliştirme Durumu
+Proje, temel fonksiyonlarını yerine getiren çalışan bir prototip sürümündedir.
 
-Mimari tasarım sayesinde tüm etmenler sırayla ve kontrollü bir şekilde birbirine bağlı çalışacaktır.
+✅ Sistem Mimarisi: Pipeline ve Modüler yapı tamamlandı.
 
-🛠 Kullanılacak Teknolojiler
+✅ Etmenler: Yazar, Eleştirmen, Editör ve Güvenlik etmenleri aktif.
 
-📌 Henüz geliştirme aşamasındadır — ancak planlanan teknoloji yığını:
+✅ Güvenlik: Regex, Fuzzy ve LLM tabanlı hibrit filtreleme sistemi eklendi.
 
-Amaç	Teknoloji
-Üretim & analiz	OpenAI GPT-4, Hugging Face Transformers
-Etmen yapısı	LangChain Agents / custom Python classes
-Arayüz	Streamlit veya Flask
-Dil	Python
-Yardımcı modüller	dotenv, json, requests
+✅ Otomatik Düzeltme: Yazım hatalarını ve karakter isimlerini düzelten akıllı modül eklendi.
 
-🚧 Geliştirme Durumu
+✅ Arayüz: Hem Terminal hem de Pencereli (GUI) arayüz tamamlandı.
 
-Bu proje aktif geliştirme aşamasındadır.
+✅ Entegrasyon: Tüm modüller birbirine bağlandı ve test edildi.
 
-✔ Sistem mimarisi ve etmen akış tasarımı hazır
-
- Yazar Etmen geliştirilme sürecinde.
-
- Eleştirmen Etmen geliştirilme sürecinde.
-
-❌ Editör Etmen geliştirilmedi
-
-❌ Arayüz oluşturulmadı
-
-❌ Etmenler arası mesaj akışı uygulanmadı
-
-❌ Model testleri yapılmadı
-
-❌ Tam entegrasyon yapılmadı
-
-🎯 Mevcut durum:
-Projenin yalnızca teorik ve yapısal tasarımı tamamlanmıştır. Uygulama kodları geliştirilmeye başlanmış ancak tamamlanmamıştır.
-
-👥 Proje Ekibi
-
+### 👥 Proje Ekibi
 Aynur Adıbelli
 
 Erva Nur Bostancı
 
-📄 Lisans
-
-Bu proje eğitim amaçlı geliştirilmiştir.
+### 📄 Lisans
+Bu proje eğitim ve araştırma amaçlı geliştirilmiştir.
