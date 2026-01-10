@@ -2,7 +2,7 @@ import sys
 import os
 
 # Proje dizinini yola ekle (Import hatası almamak için şart)
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def main():
     print("==========================================")
@@ -19,7 +19,6 @@ def main():
             print("\n>>> Terminal başlatılıyor...\n")
             try:
                 # app/interface.py içindeki ana fonksiyonunu çağırıyoruz
-                # NOT: interface.py dosyanın içinde kodların bir fonksiyon (örn: run_interface) içinde olmalı.
                 from app.interface import run_interface
                 run_interface()
             except ImportError:

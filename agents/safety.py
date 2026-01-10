@@ -35,7 +35,7 @@ class SafetyGuard:
 
         # TÜRKÇE HASSAS KELİME LİSTESİ (Fuzzy Matching için)
         # Format: ("kelime", "kategori", tolerans_miktarı, SKOR_ETKİSİ)
-        # GÜNCELLEME: Artık her kelimenin bir 'SKOR' değeri var.
+        # Her kelimenin bir 'SKOR' değeri var.
         # 8-10: Kesin Yasak (Block)
         # 5-7: Sınırda (Borderline) -> Güvenli mod sorulur
         self._FUZZY_KEYWORDS = [
@@ -230,13 +230,13 @@ class SafetyGuard:
         return []
 
     # =========================
-    # Decision (0-10) - GÜNCELLENDİ
+    # Decision (0-10)
     # =========================
     def _decide(self, score: int):
         if score <= 4:
             return "ok", True, "", ""
         if 5 <= score <= 7:
-            # GÜNCELLEME: 7 Puan artık Borderline (Sınırda) kabul ediliyor.
+            # 7 Puan Borderline (Sınırda) kabul ediliyor.
             # Böylece hemen engellemek yerine kullanıcıya soruluyor.
             return (
                 "borderline",
@@ -293,14 +293,14 @@ class SafetyGuard:
         )
 
     # =========================
-    # FUZZY KONTROLLER - GÜNCELLENDİ
+    # FUZZY KONTROLLER
     # =========================
     def _fuzzy_check_string(self, text: str) -> Optional[tuple[str, str, int]]:
         if not text:
             return None
         txt = text.lower()
         
-        # Liste formatı artık: (kelime, kategori, tolerans_miktarı, SKOR)
+        # Liste formatı: (kelime, kategori, tolerans_miktarı, SKOR)
         for kw, cat, max_dist, score in self._FUZZY_KEYWORDS:
             if self._contains_fuzzy_keyword(txt, kw, max_dist=max_dist):
                 return cat, kw, score

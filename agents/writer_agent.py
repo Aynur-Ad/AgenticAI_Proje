@@ -5,7 +5,7 @@ from agents.safety import SafetyGuard
 
 class WriterAgent:
     """
-    Writer Agent - GÜNCELLENMİŞ
+    Writer Agent
     - Yeni yazarlara yönelik hikaye taslağı üretir.
     - Güvenlik/etik kurallara uyar.
     - Belirsiz girişlerde netleştirici soru üretebilir.
@@ -30,10 +30,9 @@ class WriterAgent:
         return (not theme) and (not chars) and (len(constraints) == 0)
 
     def build_clarifying_questions(self, user_input: Dict) -> List[str]:
-        """
-        ch8'deki 'belirsizlik yönetimi' fikri:
-        Muğlak isteklerde kullanıcıya 3-5 net soru sor.
-        """
+    
+        # Belirsizlik yönetimi: Muğlak isteklerde kullanıcıya 3-5 net soru sorar.
+
         title = user_input.get("title", "").strip()
         genre = user_input.get("genre", "").strip()
 
@@ -70,7 +69,7 @@ class WriterAgent:
             "long": "detaylı ve uzun"
         }.get(length, "orta uzunlukta")
 
-        # Güvenlik + etik sistem talimatı (ch8: güven + şeffaflık)
+        # Güvenlik + etik sistem talimatı
         safety_rules = """
 GÜVENLİK VE ETİK KURALLAR:
 - Nefret söylemi, hedef gösterme, taciz/hakaret içeren içerik üretme.
@@ -139,7 +138,7 @@ Tema: {theme}
         # LLM çıktısını al ve temizle
         raw_text = self.llm(prompt).strip()
         
-        # Manuel temizlik: Model inatla "Başlık:" yazarsa silelim
+        # Manuel temizlik: Model inatla "Başlık:" yazarsa silmek için
         lines = raw_text.split('\n')
         cleaned_lines = []
         for line in lines:

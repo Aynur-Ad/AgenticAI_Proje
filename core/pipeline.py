@@ -11,9 +11,11 @@ class StoryWorkshopPipeline:
         self.editor = editor
 
     def run(self, user_input: dict) -> dict:
+
         """
         Atolye akisini baslatir.
-        GÜNCELLEME: Başlık, Baş Harfleri Büyük (Title Case) formatında eklenir.
+        Başlık, Baş Harfleri Büyük (Title Case) formatında eklenir.
+        
         """
 
         # Başlığı al ve düzgün formatla (Örn: "kırık pencere" -> "Kırık Pencere")

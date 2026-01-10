@@ -18,14 +18,14 @@ class CriticAgent:
         self.llm = llm
 
     def _clean_json_text(self, text: str) -> str:
-        # Markdown kod bloklarını temizle
+        # Markdown kod bloklarını temizleyelim
         text = text.replace("```json", "").replace("```", "")
         return text.strip()
 
     def _fix_json_with_llm(self, broken_text: str, error_msg: str) -> str:
-        """
-        Model bozuk JSON verirse, hatayı gösterip düzeltmesini isteriz.
-        """
+        
+        # Model JSON'ı hatalı verirse, hatayı gösterip düzeltmesini isteriz.
+        
         repair_prompt = f"""
         Aşağıdaki JSON metninde bir format hatası var.
         Hata: {error_msg}
@@ -39,7 +39,7 @@ class CriticAgent:
         return self.llm(repair_prompt)
 
     def run(self, story_text: str) -> str:
-        # Güvenlik reddi varsa eleştirme
+        # Güvenlik reddi varsa eleştirme yapsın
         if "yardımcı olamam" in story_text.lower() or "güvenlik filtresi" in story_text.lower():
             return json.dumps({
                 "general_evaluation": "Güvenlik nedeniyle içerik oluşturulamadı.",

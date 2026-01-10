@@ -7,7 +7,7 @@ class EditorAgent:
     Eleştirmen geri bildirimlerini uygulayarak hikayeyi geliştiren Editör Etmeni.
     - Güvenlik kurallarına uyar.
     - Hikayeyi tamamen baştan yazmaz; temel fikri korur.
-    - GÜNCELLEME: Çıktıda başlık veya giriş cümlesi (meta-text) bulunmasını engeller.
+    - Çıktıda başlık veya giriş cümlesi (meta-text) bulunmasını engeller.
     """
 
     def __init__(self, llm: Callable[[str], str]):
@@ -58,8 +58,7 @@ Geliştirilmiş Hikaye:
         # LLM'i çağır ve boşlukları temizle
         raw_text = self.llm(prompt).strip()
 
-        # Manuel Temizlik (Fallback):
-        # Eğer model hala inatla "Başlık:" veya "Revize Metin:" gibi şeyler yazarsa onları siliyoruz.
+        # Manuel Temizlik (Fallback): Eğer model hala inatla "Başlık:" veya "Revize Metin:" gibi şeyler yazarsa onları siliyoruz.
         lines = raw_text.split('\n')
         cleaned_lines = []
         

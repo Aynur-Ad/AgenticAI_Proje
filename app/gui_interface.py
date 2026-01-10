@@ -11,7 +11,7 @@ from agents.editor_agent import EditorAgent
 from core.pipeline import StoryWorkshopPipeline
 from agents.safety import SafetyGuard
 
-# --- YENİ FONKSİYON: YAZIM HATASI DÜZELTİCİ ---
+# --- YAZIM HATASI DÜZELTİCİ ---
 def correct_typos_with_llm(user_input: dict, llm) -> dict:
     """
     Kullanıcı girdisindeki bariz yazım hatalarını (Typos) düzeltir.
@@ -19,7 +19,6 @@ def correct_typos_with_llm(user_input: dict, llm) -> dict:
     """
     try:
         # LLM'e sadece JSON verip düzeltmesini istiyoruz
-        # GÜNCELLEME: Karakter kuralı eklendi.
         prompt = f"""
 Sen bir Türkçe İmla Denetçisisin.
 Aşağıdaki JSON verisindeki "title", "genre", "theme" ve "characters" alanlarını düzelt.
@@ -35,7 +34,7 @@ Girdi JSON:
 """
         response = llm(prompt).strip()
         
-        # JSON temizleme (Markdown ```json ... ``` varsa sil)
+        # JSON temizleme (Markdown ```json ... ``` varsa siler)
         if "```" in response:
             response = response.split("```")[1].replace("json", "").strip()
         elif response.startswith("json"):
@@ -43,19 +42,18 @@ Girdi JSON:
 
         corrected_data = json.loads(response)
         
-        # Eski veriyle birleştir (kayıp olmasın)
+        # Eski veriyle birleştirir
         user_input.update(corrected_data)
         return user_input
 
     except Exception as e:
         print(f"Typo düzeltme hatası: {e}")
-        return user_input # Hata olursa orijinalini döndür
+        return user_input # Hata olursa orijinalini döndürür
 
 def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
-    """
-    GUI üzerinden güvenlik akışını yürütür.
-    GÜNCELLEME: Kod yapısı bozulmadan 'Tür/Başlık/Tema' ayrımı ve 'Başlık Düzeni' eklendi.
-    """
+
+    # GUI üzerinden güvenlik akışını yürütür.
+    
     guard = SafetyGuard(llm)
     forced_safe_mode = False
 
@@ -72,7 +70,7 @@ def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
         sug = safety_result.get("suggestion", "Lütfen daha güvenli bir içerik düşün.")
         full_msg = f"Skor: {score}/10 | Seviye: {tier}\n\n{msg}\n\nÖneri: {sug}"
 
-        # --- YENİLİK 1: Hangi alanın hatalı olduğunu tespit ediyoruz ---
+        # Hangi alanın hatalı olduğunu tespit ediyoruz
         target_field = "theme"   # Varsayılan olarak Tema
         display_label = "Tema"
         
@@ -84,7 +82,7 @@ def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
             target_field = "title"
             display_label = "Başlık"
             
-        # --- YENİLİK 2: Başlık girilirse otomatik baş harfleri büyütme fonksiyonu ---
+        # Başlık girilirse otomatik baş harfleri büyütme fonksiyonu
         def clean_input(val):
             if not val: return val
             if target_field == "title": # Sadece başlık ise Title Case yap
@@ -103,7 +101,7 @@ def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
                 messagebox.showinfo("İptal", "Değişiklik yapılmadı, işlem iptal edildi.")
                 return False, None
             
-            user_input[target_field] = clean_input(new_val) # Güncelleme burada
+            user_input[target_field] = clean_input(new_val) 
             continue
 
         # 1) HIGH RISK: block -> sadece ilgili alanı değiştir
@@ -115,7 +113,7 @@ def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
                 messagebox.showinfo("İptal", "Değişiklik yapılmadı, işlem iptal edildi.")
                 return False, None
             
-            user_input[target_field] = clean_input(new_val) # Güncelleme burada
+            user_input[target_field] = clean_input(new_val) 
             continue
 
         # 2) BORDERLINE: değiştir mi, yoksa safe mode ile devam mı?
@@ -131,7 +129,7 @@ def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
                 messagebox.showinfo("İptal", "İşlem iptal edildi.")
                 return False, None
             
-            user_input[target_field] = clean_input(new_val) # Güncelleme burada
+            user_input[target_field] = clean_input(new_val) 
             continue
 
         # Hayır -> safe mode ile devam (isteğe bağlı yaş sorusu)
@@ -149,7 +147,7 @@ def apply_safety_flow_with_gui(root: tk.Tk, user_input: dict, llm):
         forced_safe_mode = True
         break
 
-    # safe mode constraint ekle (Senin kodunla aynı)
+    # safe mode constraint
     if forced_safe_mode:
         constraints = user_input.get("constraints") or []
         constraints.append(
@@ -211,7 +209,7 @@ def create_gui():
     ttk.Label(header, text="Yapay Hikaye Atölyesi", style="Header.TLabel").pack(anchor="w")
     ttk.Label(
         header,
-        text="Başlık/Tür/Tema gir → Güvenlik kontrolü → Taslak + Eleştiri + Final",
+        text="Başlık/Tür/Tema gir → Yazım Hatası Kontrolü → Güvenlik Kontrolü → Taslak + Eleştiri + Final",
         style="Sub.TLabel"
     ).pack(anchor="w", pady=(4, 0))
 
@@ -333,7 +331,7 @@ def create_gui():
             run_button.config(state="disabled")
             clear_button.config(state="disabled")
             progress.start(12)
-            # Not: status mesajını çağıran yere bırakıyoruz
+            # Not: status mesajını çağıran yere bırakalım
         else:
             progress.stop()
             run_button.config(state="normal")
@@ -381,7 +379,7 @@ def create_gui():
         # Typo düzeltme çağrısı
         corrected_input = correct_typos_with_llm(user_input, llm)
 
-        # Düzeltilenleri ekrana yansıt (GUI Update)
+        # Düzeltilenleri ekrana yansıtır (GUI Update)
         entry_title.delete(0, tk.END)
         entry_title.insert(0, corrected_input.get("title", ""))
 
@@ -391,7 +389,7 @@ def create_gui():
         entry_theme.delete(0, tk.END)
         entry_theme.insert(0, corrected_input.get("theme", ""))
         
-        # GÜNCELLEME: Karakter listesini "Ali, Veli" formatına çevirip kutuya yaz
+        # Karakter listesini "Ali, Veli" formatına çevirip kutuya yaz
         c_list = corrected_input.get("characters", [])
         if isinstance(c_list, list):
             c_str = ", ".join(c_list)

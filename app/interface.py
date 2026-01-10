@@ -7,7 +7,7 @@ from agents.editor_agent import EditorAgent
 from core.pipeline import StoryWorkshopPipeline
 from agents.safety import SafetyGuard
 
-# --- GÜNCELLENMİŞ FONKSİYON: DAHA AKILLI DÜZELTİCİ ---
+# --- AKILLI DÜZELTİCİ ---
 def correct_typos_with_llm(user_input: dict, llm) -> dict:
     """
     Kullanıcı girdisindeki bozuk yazımları, eksik harfleri ve karakter isimlerini düzeltir.
@@ -15,7 +15,6 @@ def correct_typos_with_llm(user_input: dict, llm) -> dict:
     """
     print("⏳  Yapay zeka başlık ve isimleri analiz edip düzeltiyor...")
     try:
-        # Prompt'u GÜÇLENDİRDİK: Sadece imla değil, "Tahmin Etme" yeteneği ekledik.
         prompt = f"""
 Sen uzman bir Türkçe Editörü ve Düzeltmenisin.
 Görevin: Aşağıdaki JSON verisindeki alanları analiz et ve hatalı/eksik yazımları EN DOĞRU Türkçe haline çevir.
@@ -71,7 +70,7 @@ def _ask_age() -> int:
         print("Lütfen geçerli bir sayı girin (ör. 18).")
 
 def run_interface():
-    # 1. LLM'i en başta alıyoruz
+   
     llm = get_llm()
 
     print("\n=== YAPAY HIKAYE ATOLYESI (TERMINAL) ===\n")
@@ -96,10 +95,10 @@ def run_interface():
     # --- 1. ADIM: TYPO VE KARAKTER DÜZELTME ---
     user_input = correct_typos_with_llm(user_input, llm)
     
-    # Kullanıcıya neyin düzeltildiğini gösterelim
+    # Kullanıcıya neyin düzeltildiğini gösteriyoruz
     print(f"\n✅  Algılanan Başlık: {user_input['title']}")
     print(f"✅  Algılanan Tür: {user_input['genre']}")
-    # Karakter listesini string olarak göster
+    # Karakter listesini string olarak gösteriyoruz
     c_str = ", ".join(user_input['characters']) if isinstance(user_input['characters'], list) else str(user_input['characters'])
     print(f"✅  Algılanan Karakterler: {c_str}")
     print("-" * 30)
