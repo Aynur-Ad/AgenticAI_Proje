@@ -80,7 +80,8 @@ Verinin kullanıcıdan çıktıya kadar izlediği yol aşağıdadır:
                   | 📚 FİNAL ÇIKTI|
                   +---------------+
 
----
+```
+
 
 🏗 Sistem Mimarisi ve Teknoloji
 Proje modüler bir yapıda geliştirilmiştir ve aşağıdaki katmanlardan oluşur:
